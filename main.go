@@ -5,16 +5,14 @@ import (
 	"time"
 )
 
-var liveCells = LiveCells{ make(map[Cell]bool)}
+var liveCells = LiveCells{make(map[Cell]bool)}
 
 var liveCellsToKill = make(map[Cell]bool)
 var deadCellsToCheck = make(map[Cell]bool)
 var deadCellsToRevive = make(map[Cell]bool)
 
-var xOffset = goterm.Width()/2
-var yOffset = goterm.Height()/2
-
-const DEBUG = true
+var xOffset = goterm.Width() / 2
+var yOffset = goterm.Height() / 2
 
 type Cell struct {
 	X int
@@ -25,24 +23,24 @@ type LiveCells struct {
 	Cells map[Cell]bool
 }
 
-func (liveCells *LiveCells) KillCell(cellToKill Cell) {
+func (liveCells *LiveCells) killCell(cellToKill Cell) {
 	delete(liveCells.Cells, cellToKill)
 }
 
-func (liveCells *LiveCells) ReviveCell(cellToRevive Cell) {
+func (liveCells *LiveCells) reviveCell(cellToRevive Cell) {
 	liveCells.Cells[cellToRevive] = true
 }
 
-func (liveCells *LiveCells) CellIsAlive(cellToCheck Cell) bool {
+func (liveCells *LiveCells) cellIsAlive(cellToCheck Cell) bool {
 	if _, present := liveCells.Cells[cellToCheck]; present {
 		return true
-	} else {
-		return false
 	}
+
+	return false
 }
 
 // Seed function
-func RPentomino() map[Cell]bool{
+func rPentomino() map[Cell]bool {
 	seed := make(map[Cell]bool)
 
 	// Top row
@@ -60,7 +58,7 @@ func RPentomino() map[Cell]bool{
 }
 
 // Seed function
-func Blinker() map[Cell]bool {
+func blinker() map[Cell]bool {
 	seed := make(map[Cell]bool)
 
 	seed[Cell{1, 0}] = true
@@ -71,7 +69,7 @@ func Blinker() map[Cell]bool {
 }
 
 // Seed function
-func Acorn() map[Cell]bool {
+func acorn() map[Cell]bool {
 	seed := make(map[Cell]bool)
 
 	// First row
@@ -90,13 +88,13 @@ func Acorn() map[Cell]bool {
 	return seed
 }
 
-func Seed() map[Cell]bool {
+func seed() map[Cell]bool {
 
-	return Acorn()
+	return acorn()
 }
 
 // Adds dead neighbours to deadCellsToCheck and returns number of live neighbours
-func CountLiveNeighbours(cell Cell, addDeadCellsToList bool) (int) {
+func countLiveNeighbours(cell Cell, addDeadCellsToList bool) int {
 	var count int
 
 	// Always eight neighbours, hardcode coordinates
@@ -115,9 +113,9 @@ func CountLiveNeighbours(cell Cell, addDeadCellsToList bool) (int) {
 		{cell.X, cell.Y + 1},
 		{cell.X + 1, cell.Y + 1}}
 
-	for i := 0; i < len(neighbourCells) ;i++  {
+	for i := 0; i < len(neighbourCells); i++ {
 		currentCell := neighbourCells[i]
-		if liveCells.CellIsAlive(currentCell) {
+		if liveCells.cellIsAlive(currentCell) {
 			count++
 		} else if addDeadCellsToList {
 			deadCellsToCheck[currentCell] = true
@@ -127,9 +125,9 @@ func CountLiveNeighbours(cell Cell, addDeadCellsToList bool) (int) {
 	return count
 }
 
-func CheckLiveCells() {
-	for currentCell := range liveCells.Cells  {
-		liveNeighbours := CountLiveNeighbours(currentCell, true)
+func checkLiveCells() {
+	for currentCell := range liveCells.Cells {
+		liveNeighbours := countLiveNeighbours(currentCell, true)
 
 		if liveNeighbours < 2 || liveNeighbours > 3 {
 			liveCellsToKill[currentCell] = true
@@ -137,9 +135,9 @@ func CheckLiveCells() {
 	}
 }
 
-func CheckDeadCells() {
-	for celllToCheck := range deadCellsToCheck{
-		liveNeighbours := CountLiveNeighbours(celllToCheck, false)
+func checkDeadCells() {
+	for celllToCheck := range deadCellsToCheck {
+		liveNeighbours := countLiveNeighbours(celllToCheck, false)
 
 		if liveNeighbours == 3 {
 			deadCellsToRevive[celllToCheck] = true
@@ -147,36 +145,35 @@ func CheckDeadCells() {
 	}
 }
 
-
-func KillLiveCellsInList() {
-	for cellToKill := range liveCellsToKill  {
-		liveCells.KillCell(cellToKill)
+func killLiveCellsInList() {
+	for cellToKill := range liveCellsToKill {
+		liveCells.killCell(cellToKill)
 	}
 }
 
-func ReviveDeadCellsInList() {
+func reviveDeadCellsInList() {
 	for cellToRevive := range deadCellsToRevive {
-		liveCells.ReviveCell(cellToRevive)
+		liveCells.reviveCell(cellToRevive)
 	}
 }
 
-func CalculateCellChange() {
+func calculateCellChange() {
 
 	// Iterate through all live cells
 	// 	 count live neighbours, add cell to list of cells to kill if less than two or more than three live neighbours
 	//   add each dead neighbour cell to list of cells to check
-	CheckLiveCells()
+	checkLiveCells()
 
 	// Iterate through all dead cells added in previous step
 	//   add cell to list of cells to revive if exactly three live neighbours
 	// 	 do NOT add neighbours to list of cells to check, this will result in an infinite loop
-	CheckDeadCells()
+	checkDeadCells()
 
 	// Iterate through list of cells to kill and kill them
-	KillLiveCellsInList()
+	killLiveCellsInList()
 
 	// Iterate through list of cells to revive and revive them
-	ReviveDeadCellsInList()
+	reviveDeadCellsInList()
 
 	// Reset all lists except live cells list
 	liveCellsToKill = make(map[Cell]bool)
@@ -184,19 +181,19 @@ func CalculateCellChange() {
 	deadCellsToRevive = make(map[Cell]bool)
 }
 
-func DrawCells() {
+func drawCells() {
 	goterm.Clear()
 
 	for currentCell := range liveCells.Cells {
 		// Don't draw cells outside the game board
-		if currentCell.X + xOffset > goterm.Width() ||
-			currentCell.X + xOffset < 0 ||
-			currentCell.Y + yOffset > goterm.Height() ||
-			currentCell.Y + yOffset < 0 {
+		if currentCell.X+xOffset > goterm.Width() ||
+			currentCell.X+xOffset < 0 ||
+			currentCell.Y+yOffset > goterm.Height() ||
+			currentCell.Y+yOffset < 0 {
 			continue
 		}
 
-		goterm.MoveCursor(currentCell.X + xOffset, currentCell.Y + yOffset)
+		goterm.MoveCursor(currentCell.X+xOffset, currentCell.Y+yOffset)
 		goterm.Print("X")
 	}
 
@@ -204,11 +201,11 @@ func DrawCells() {
 }
 
 func main() {
-	liveCells.Cells = Seed()
+	liveCells.Cells = seed()
 
 	for {
-		DrawCells()
-		CalculateCellChange()
+		drawCells()
+		calculateCellChange()
 		time.Sleep(100 * time.Millisecond)
 	}
 }
