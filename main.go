@@ -21,6 +21,15 @@ type Cell struct {
 	Y int
 }
 
+// Checks if a given cell is in the liveCells list
+func  (cell *Cell) IsAlive() bool {
+	if _, present := liveCells[*cell]; present {
+		return true
+	} else {
+		return false
+	}
+}
+
 // Seed function
 func RPentomino() map[Cell]bool{
 	seed := make(map[Cell]bool)
@@ -97,7 +106,7 @@ func CountLiveNeighbours(cell Cell, addDeadCellsToList bool) (int) {
 
 	for i := 0; i < len(neighbourCells) ;i++  {
 		currentCell := neighbourCells[i]
-		if CellIsAlive(currentCell) {
+		if currentCell.IsAlive() {
 			count++
 		} else if addDeadCellsToList {
 			deadCellsToCheck[currentCell] = true
@@ -105,15 +114,6 @@ func CountLiveNeighbours(cell Cell, addDeadCellsToList bool) (int) {
 	}
 
 	return count
-}
-
-// Checks if a given cell is in the liveCells list
-func CellIsAlive(cell Cell) bool {
-	if _, present := liveCells[cell]; present {
-		return true
-	} else {
-		return false
-	}
 }
 
 func CheckLiveCells() {
