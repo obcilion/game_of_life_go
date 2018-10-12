@@ -1,11 +1,11 @@
-package game_of_life_go
+package main
 
 import (
 	"github.com/buger/goterm"
 	"time"
 )
 
-var liveCells = make(map[Cell]bool)
+var liveCells = LiveCells{ make(map[Cell]bool)}
 
 var liveCellsToKill = make(map[Cell]bool)
 var deadCellsToCheck = make(map[Cell]bool)
@@ -21,9 +21,20 @@ type Cell struct {
 	Y int
 }
 
-// Checks if a given cell is in the liveCells list
-func  (cell *Cell) IsAlive() bool {
-	if _, present := liveCells[*cell]; present {
+type LiveCells struct {
+	Cells map[Cell]bool
+}
+
+func (liveCells *LiveCells) KillCell(cellToKill Cell) {
+	delete(liveCells.Cells, cellToKill)
+}
+
+func (liveCells *LiveCells) ReviveCell(cellToRevive Cell) {
+	liveCells.Cells[cellToRevive] = true
+}
+
+func (liveCells *LiveCells) CellIsAlive(cellToCheck Cell) bool {
+	if _, present := liveCells.Cells[cellToCheck]; present {
 		return true
 	} else {
 		return false
@@ -106,7 +117,7 @@ func CountLiveNeighbours(cell Cell, addDeadCellsToList bool) (int) {
 
 	for i := 0; i < len(neighbourCells) ;i++  {
 		currentCell := neighbourCells[i]
-		if currentCell.IsAlive() {
+		if liveCells.CellIsAlive(currentCell) {
 			count++
 		} else if addDeadCellsToList {
 			deadCellsToCheck[currentCell] = true
@@ -117,7 +128,7 @@ func CountLiveNeighbours(cell Cell, addDeadCellsToList bool) (int) {
 }
 
 func CheckLiveCells() {
-	for currentCell := range liveCells  {
+	for currentCell := range liveCells.Cells  {
 		liveNeighbours := CountLiveNeighbours(currentCell, true)
 
 		if liveNeighbours < 2 || liveNeighbours > 3 {
@@ -127,25 +138,25 @@ func CheckLiveCells() {
 }
 
 func CheckDeadCells() {
-	for currentCell := range deadCellsToCheck{
-		liveNeighbours := CountLiveNeighbours(currentCell, false)
+	for celllToCheck := range deadCellsToCheck{
+		liveNeighbours := CountLiveNeighbours(celllToCheck, false)
 
 		if liveNeighbours == 3 {
-			deadCellsToRevive[currentCell] = true
+			deadCellsToRevive[celllToCheck] = true
 		}
 	}
 }
 
 
 func KillLiveCellsInList() {
-	for currentCell := range liveCellsToKill  {
-		delete(liveCells, currentCell)
+	for cellToKill := range liveCellsToKill  {
+		liveCells.KillCell(cellToKill)
 	}
 }
 
 func ReviveDeadCellsInList() {
-	for currentCell := range deadCellsToRevive {
-		liveCells[currentCell] = true
+	for cellToRevive := range deadCellsToRevive {
+		liveCells.ReviveCell(cellToRevive)
 	}
 }
 
@@ -176,8 +187,12 @@ func CalculateCellChange() {
 func DrawCells() {
 	goterm.Clear()
 
-	for currentCell := range liveCells {
-		if currentCell.X + xOffset > goterm.Width() || currentCell.X + xOffset < 0 || currentCell.Y + yOffset > goterm.Height() || currentCell.Y + yOffset < 0 {
+	for currentCell := range liveCells.Cells {
+		// Don't draw cells outside the game board
+		if currentCell.X + xOffset > goterm.Width() ||
+			currentCell.X + xOffset < 0 ||
+			currentCell.Y + yOffset > goterm.Height() ||
+			currentCell.Y + yOffset < 0 {
 			continue
 		}
 
@@ -189,7 +204,7 @@ func DrawCells() {
 }
 
 func main() {
-	liveCells = Seed()
+	liveCells.Cells = Seed()
 
 	for {
 		DrawCells()
