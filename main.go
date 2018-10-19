@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/buger/goterm"
+	"strconv"
 	"time"
 )
 
@@ -84,6 +85,24 @@ func acorn() map[Cell]bool {
 	seed[Cell{4, 2}] = true
 	seed[Cell{5, 2}] = true
 	seed[Cell{6, 2}] = true
+
+	return seed
+}
+
+// Seed function
+func glider() map[Cell]bool {
+	seed := make(map[Cell]bool)
+
+	// First row
+	seed[Cell{0, -1}] = true
+
+	// Second row
+	seed[Cell{1, 0}] = true
+
+	// Third row
+	seed[Cell{-1, 1}] = true
+	seed[Cell{0, 1}] = true
+	seed[Cell{1, 1}] = true
 
 	return seed
 }
@@ -182,7 +201,6 @@ func calculateCellChange() {
 }
 
 func drawCells() {
-	goterm.Clear()
 
 	for currentCell := range liveCells.Cells {
 		// Don't draw cells outside the game board
@@ -196,16 +214,25 @@ func drawCells() {
 		goterm.MoveCursor(currentCell.X+xOffset, currentCell.Y+yOffset)
 		goterm.Print("X")
 	}
+}
 
-	goterm.Flush()
+func drawText(text string) {
+	goterm.MoveCursor(0, 0)
+	goterm.Print(text)
 }
 
 func main() {
 	liveCells.Cells = seed()
+	generation := 0
 
 	for {
+		goterm.Clear()
+		drawText(strconv.Itoa(generation))
 		drawCells()
+		goterm.Flush()
+
 		calculateCellChange()
-		time.Sleep(100 * time.Millisecond)
+		generation++
+		time.Sleep(33 * time.Millisecond)
 	}
 }
